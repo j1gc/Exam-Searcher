@@ -1,5 +1,6 @@
-import time
+import os
 import uuid
+import zipfile
 
 from playwright.sync_api import sync_playwright
 
@@ -39,11 +40,33 @@ def download_exams_on_url( urls, output_path):
 
         page.close()
 
-def main():
-    # urls = ["https://za-aufgaben.nibis.de/index.php?jahr=1", "https://za-aufgaben.nibis.de/index.php?jahr=1"]
-    # download_exams_on_url(urls, "../exams/zips/")
+def unzip_zips_in_dir(directory, output_dir):
+    files = os.listdir(directory)
+    print(files)
+    # unpack zips
+    for file in files:
+        # if file is not a zip, skip
+        if not file.endswith(".zip"):
+            print("Skipping " + file)
+            continue
 
-    print("Downloading exams...")
+        # unzips downloaded files
+        with zipfile.ZipFile(directory + file, "r") as exam_zip:
+            exam_zip.extractall(output_dir)
+
+
+def main():
+    zipfile_output_path = "../exams/zips/entire/"
+    output_path_subject_zips = "../exams/zips/subjects/"
+    output_path_subject = "../exams/subjects/"
+    # urls = ["https://za-aufgaben.nibis.de/index.php?jahr=1", "https://za-aufgaben.nibis.de/index.php?jahr=1"]
+    # download_exams_on_url(urls, zipfile_output_path)
+
+    unzip_zips_in_dir(zipfile_output_path, output_path_subject_zips)
+
+    unzip_zips_in_dir(output_path_subject_zips, output_path_subject)
+
+
 
 if __name__ == "__main__":
     main()
