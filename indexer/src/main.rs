@@ -4,6 +4,11 @@ use std::{fs, io, };
 use std::collections::HashMap;
 use std::fs::DirEntry;
 use std::path::Path;
+use std::sync::Arc;
+use axum::http::StatusCode;
+use axum::{Json, Router};
+use axum::extract::State;
+use axum::routing::post;
 use markdown::mdast::Node;
 use serde::{Serialize, Deserialize};
 
@@ -170,6 +175,8 @@ impl Document {
 }
 
 #[derive(Debug)]
+#[derive(Clone)]
+#[derive(serde::Serialize)]
 struct QueryReturn {
     document_path: String,
     similarity: f32,
@@ -289,9 +296,26 @@ impl Searcher {
     }
 }
 
+#[derive(serde::Deserialize)]
+struct SearchRequest {
+    query: String,
+}
+
+struct AppState {
+    searcher: Searcher,
+}
+
+#[axum::debug_handler]
+async fn search(State(state): State<Arc<AppState>>, Json(req): Json<SearchRequest>) -> (StatusCode, Json<Vec<QueryReturn>>) {
+    let mut results = state.searcher.search_documents(req.query);
+    results.sort_by(|a, b| b.similarity.partial_cmp(&a.similarity).unwrap());
+
+    return (StatusCode::OK, Json(results[0..20].to_vec()));
+}
 
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let mut s = Searcher {
         documents: Vec::new(),
         idf: HashMap::new(),
@@ -308,13 +332,17 @@ fn main() {
         println!("Loaded embeddings from file");
     }
 
-
-    let mut results = s.search_documents("Together with your English partner school, you work on an Erasmus+ project ".to_string());
-    results.sort_by(|a, b| b.similarity.partial_cmp(&a.similarity).unwrap());
-
-    results[0..10].iter().for_each(|result| {
-        println!("{:?}", result);
+    let app_state = Arc::new(AppState {
+        searcher: s,
     });
+
+    let app = Router::new()
+        .route("/search", post(search)).with_state(app_state);
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await.unwrap();
+    axum::serve(listener, app).await.unwrap();
+
+
 
 
     println!("Done")

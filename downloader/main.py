@@ -114,12 +114,16 @@ def handle_markdown_conversion(pdf_dir, markdown_dir):
             print("NONE PDF FILE: " + file)
             continue
 
+
         print("File:", index, "of", num_pdf_files, "~", round(index/num_pdf_files*100, 2), "%")
 
-        markdown_file_path = markdown_dir + file.removeprefix(pdf_dir).removesuffix(".pdf") + ".md"
-        print("converting file:", file, "to:", markdown_file_path)
+        try:
+            markdown_file_path = markdown_dir + file.removeprefix(pdf_dir).removesuffix(".pdf") + ".md"
+            print("converting file:", file, "to:", markdown_file_path)
+            convert_pdf_to_markdown(file, markdown_file_path, converter)
+        except:
+            print("couldn't convert file:", file)
 
-        convert_pdf_to_markdown(file, markdown_file_path , converter)
 
         index += 1
 
@@ -130,12 +134,12 @@ def main():
     output_path_subject = "../exams/subjects/"
     output_path_markdown = "../exams/markdown/"
 
-    # urls = ["https://za-aufgaben.nibis.de/index.php?jahr=1", "https://za-aufgaben.nibis.de/index.php?jahr=0"]
-    # download_exams_on_url(urls, zipfile_output_path)
+    urls = ["https://za-aufgaben.nibis.de/index.php?jahr=1", "https://za-aufgaben.nibis.de/index.php?jahr=0"]
+    download_exams_on_url(urls, zipfile_output_path)
 
-    # unzip_zips_in_dir(zipfile_output_path, output_path_subject_zips)
+    unzip_zips_in_dir(zipfile_output_path, output_path_subject_zips)
 
-    # unzip_zips_in_dir(output_path_subject_zips, output_path_subject)
+    unzip_zips_in_dir(output_path_subject_zips, output_path_subject)
 
     handle_markdown_conversion(output_path_subject, output_path_markdown)
 
