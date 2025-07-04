@@ -130,7 +130,7 @@ def main():
     output_path_subject = "../exams/subjects/"
     output_path_markdown = "../exams/markdown/"
 
-    # urls = ["https://za-aufgaben.nibis.de/index.php?jahr=1", "https://za-aufgaben.nibis.de/index.php?jahr=1"]
+    # urls = ["https://za-aufgaben.nibis.de/index.php?jahr=1", "https://za-aufgaben.nibis.de/index.php?jahr=0"]
     # download_exams_on_url(urls, zipfile_output_path)
 
     # unzip_zips_in_dir(zipfile_output_path, output_path_subject_zips)
