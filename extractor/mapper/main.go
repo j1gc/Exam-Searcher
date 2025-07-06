@@ -22,37 +22,95 @@ func printModelList(ctx context.Context, client *genai.Client) {
 	}
 }
 
-func MapExamsInDirectoryToAnswers(ctx context.Context, client *genai.Client, directoryTree string) []Exams {
+func MapExamsInDirectoryToAnswers(ctx context.Context, client *genai.Client, directoryTree string) (Subject, int32) {
+	var enumSubjects = []string{
+		"Deutsch",
+		"Englisch",
+		"Französisch",
+		"Spanisch",
+		"Latein",
+		"Griechisch",
+		"Kunst",
+		"Musik",
+		"Erdkunde",
+		"Geschichte",
+		"Politik-Wirtschaft",
+		"Evangelische Religion",
+		"Katholische Religion",
+		"Werte und Normen",
+		"Mathematik",
+		"Mathematik (berufliches Gymnasium)",
+		"Mathematik (zweiter Bildungsweg)",
+		"Mechatronik", // This subject exists two times on the official website. Why is that?
+		"Biologie",
+		"Chemie",
+		"Physik",
+		"Informatik",
+		"Sport",
+		"Ernährung",
+		"Betriebswirtschaft mit Rechnungswesen-Controlling",
+		"Pädagogik-Psychologie",
+		"Betriebs- und Volkswirtschaft",
+		"Volkswirtschaft",
+		"Gesundheit-Pflege",
+	}
+
 	// creates the config
 	responseSchema := genai.Schema{
-		Type: genai.TypeArray,
-		Items: &genai.Schema{
-			Title: "Exams",
-			Type:  genai.TypeArray,
-			Items: &genai.Schema{
-				Type: genai.TypeObject,
-				Properties: map[string]*genai.Schema{
-					"ExamPart": {
-						Type: genai.TypeString,
-					},
-					"Answer part": {
-						Type: genai.TypeString,
+		Type:        genai.TypeObject,
+		Description: "The response schema",
+		Properties: map[string]*genai.Schema{
+			"friendlySubjectName": {
+				Type:        genai.TypeString,
+				Enum:        enumSubjects,
+				Description: "The friendly subject name from the enum provided eg: 2016VW -> Volkswirtschaft",
+			},
+			"year": {
+				Type:        genai.TypeString,
+				Description: "The year of the exam eg: 2016VW  -> 2016",
+			},
+			"exams": {
+				Type: genai.TypeArray,
+				Items: &genai.Schema{
+					Title: "exams",
+					Type:  genai.TypeArray,
+					Items: &genai.Schema{
+						Type: genai.TypeObject,
+						Properties: map[string]*genai.Schema{
+							"examPart": {
+								Type:        genai.TypeString,
+								Description: "The exam part eg: 2017DeutschEAAufg1.md",
+							},
+							"answerPart": {
+								Type:        genai.TypeString,
+								Description: "The answer part eg: 2017DeutschEAA1L.md. Do not use a path use only the file name",
+							},
+							"additionalParts": {
+								Type: genai.TypeArray,
+								Items: &genai.Schema{
+									Type: genai.TypeString,
+								},
+								Description: "The additional parts eg: Deckblatt, Hinweise, Material: 2016ChemieEAmitExpA1LHinweise.md",
+							},
+						},
+						Required: []string{"examPart", "answerPart"},
 					},
 				},
 			},
 		},
+		Required: []string{"friendlySubjectName", "year", "exams"},
 	}
 	thinkingBudget := int32(0) // Disables thinking
 	thinkingConfig := genai.ThinkingConfig{ThinkingBudget: &thinkingBudget}
 
 	// queries the AI for the structure
 	prompt := fmt.Sprintf("you are given an file tree, "+
-		"organize the filenames according to that. Under all circumstances only give back the filename not the entire path for the fields and do not change the file name under all circumstances in adition to that all fields are rquierd and every field can only take one file. "+
-		"This is an example of how you can give it back: [\n  [\n    {\n      \"Answer part\": \"2017DeutschEAA1L.md\",\n      \"ExamPart\": \"2017DeutschEAAufg1.md\"\n    },\n    {\n      \"Answer part\": \"2017DeutschEAA2L.md\",\n      \"ExamPart\": \"2017DeutschEAAufg2.md\"\n    },\n    {\n      \"Answer part\": \"2017DeutschEAA3L.md\",\n      \"ExamPart\": \"2017DeutschEAAufg3.md\"\n    }\n  ],\n  [\n    {\n      \"Answer part\": \"2017DeutschGAA1L.md\",\n      \"ExamPart\": \"2017DeutschGAAufg1.md\"\n    },\n    {\n      \"Answer part\": \"2017DeutschGAA2L.md\",\n      \"ExamPart\": \"2017DeutschGAAufg2.md\"\n    },\n    {\n      \"Answer part\": \"2017DeutschGAA3L.md\",\n      \"ExamPart\": \"2017DeutschGAAufg3.md\"\n    }\n  ]\n]"+
+		"organize the filenames according to that. Under all circumstances only give back the filename not the entire path for the fields and do not change the file name under all circumstances in adition to that all fields are rquierd and every field can only take one file. Every file from the input should be included in the output. Also give back an friendly subject name and a year eg:. 2016VW -> FriendlyName=Volkswirtschaft, Year=2016., the field adtional parts can be emtpy but if a file is a Deckblatt or a Hinsweis etc. it should be in that array. eg: 2016ChemieEAmitExpA1LHinweise.md and 2016ChemieEAmitExpA1LMaterial.md"+
+		""+
 		"but please do not change the name to suit that example the name should be still the same as the input: %s", directoryTree)
 	result, err := client.Models.GenerateContent(
 		ctx,
-		"gemini-2.5-flash-preview-04-17",
+		"gemini-2.5-flash-lite-preview-06-17",
 		genai.Text(prompt),
 		&genai.GenerateContentConfig{
 			ThinkingConfig:   &thinkingConfig,
@@ -64,21 +122,21 @@ func MapExamsInDirectoryToAnswers(ctx context.Context, client *genai.Client, dir
 		log.Fatal(err)
 	}
 	fmt.Println(result.Text())
+	fmt.Println("Used tokens:", result.UsageMetadata.TotalTokenCount)
 
 	// unmarshals the JSON returned by the AI into a struct
-	var exams []Exams
-	err = json.Unmarshal([]byte(result.Text()), &exams)
+	var subject Subject
+	err = json.Unmarshal([]byte(result.Text()), &subject)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return exams
+	return subject, result.UsageMetadata.TotalTokenCount
 }
 
 type PdfFile struct {
-	path        string
-	name        string
-	alreadyUsed bool
+	path string
+	name string
 }
 
 func getExamFiles(dir string) (map[string]PdfFile, error) {
@@ -94,9 +152,8 @@ func getExamFiles(dir string) (map[string]PdfFile, error) {
 		}
 
 		currentPdfFile := PdfFile{
-			path:        path,
-			name:        info.Name(),
-			alreadyUsed: false,
+			path: path,
+			name: info.Name(),
 		}
 
 		pdfFiles[currentPdfFile.name] = currentPdfFile
@@ -107,19 +164,20 @@ func getExamFiles(dir string) (map[string]PdfFile, error) {
 		return nil, err
 	}
 
-	fmt.Println(pdfFiles)
-
 	return pdfFiles, nil
 }
 
 type Subject struct {
-	SubjectName string  `json:"SubjectName"`
-	Exams       []Exams `json:"Exams"`
+	FriendlySubjectName string  `json:"friendlySubjectName"`
+	SubjectName         string  `json:"subjectName"`
+	Year                string  `json:"year"`
+	Exams               []Exams `json:"exams"`
 }
 
 type Exams []struct {
-	AnswerPart string `json:"AnswerPart"`
-	ExamPart   string `json:"ExamPart"`
+	AnswerPart      string   `json:"answerPart"`
+	ExamPart        string   `json:"examPart"`
+	AdditionalParts []string `json:"additionalParts"`
 }
 
 func main() {
@@ -152,7 +210,10 @@ func main() {
 
 	var subjects []Subject
 
+	totalTokensUsed := int32(0)
+
 	// That all could be run in go routines. But cloud scars me, so slower is better
+	// SubjectNames[9:11]
 	for idx, SubjectName := range SubjectNames {
 		dataIsCorrect := false
 		// very risky for loop, let's hope that I do not end up with a crazy cloud bill
@@ -167,37 +228,54 @@ func main() {
 				log.Fatal(err)
 			}
 
-			log.Println(string(directoryStructure))
+			subject, tokensUsed := MapExamsInDirectoryToAnswers(ctx, client, string(directoryStructure))
+			totalTokensUsed += tokensUsed
 
-			exams := MapExamsInDirectoryToAnswers(ctx, client, string(directoryStructure))
+			//filesAlreadyUsed := make(map[string]bool)
+			examFilesCorrect := 0
+			examFilesTotal := 0
+			for _, exam := range subject.Exams {
+				for _, filesForExam := range exam {
+					examFilesTotal += 1
 
-			for _, exam := range exams {
-				for _, file := range exam {
-					answerFileUsed, answerFileExists := fileMap[file.AnswerPart]
-					examFileUsed, examFileExists := fileMap[file.ExamPart]
+					_, answerFileExist := fileMap[filesForExam.AnswerPart]
+					_, examFileExists := fileMap[filesForExam.ExamPart]
 
-					if answerFileExists && examFileExists && !answerFileUsed.alreadyUsed && !examFileUsed.alreadyUsed {
-						dataIsCorrect = true
+					additionalPartsExist := true
+					if len(filesForExam.AdditionalParts) > 0 {
+						for _, additionalPart := range filesForExam.AdditionalParts {
+							_, additionalPartsExist = fileMap[additionalPart]
+							if !additionalPartsExist {
+								break
+							}
+						}
+					}
 
-						answerFileUsed.alreadyUsed = true
-						examFileUsed.alreadyUsed = true
+					if answerFileExist && examFileExists && additionalPartsExist {
+						//filesAlreadyUsed[filesForExam.ExamPart] = true
 
-						fileMap[file.AnswerPart] = answerFileUsed
-						fileMap[file.ExamPart] = examFileUsed
+						examFilesCorrect += 1
+
 					} else {
-						fmt.Println("File not found:", file.AnswerPart, file.ExamPart)
+						fmt.Println("File not found:", filesForExam.AnswerPart, filesForExam.ExamPart, "Because:", filesForExam.AdditionalParts,
+							"Answer:", answerFileExist, "Exam:", examFileExists, "AdditionalParts:", additionalPartsExist,
+							"UsedAnswer:" /*, usedAnswer "UsedExam:", usedExam,*/, "UsedAdditionalPart:",
+						)
+						//fmt.Println("Files already used:", filesAlreadyUsed)
 					}
 				}
 			}
-			if dataIsCorrect {
+			if examFilesCorrect == examFilesTotal {
+				dataIsCorrect = true
+
 				// ads the current subject to the subject array if the AI does not hallucinate the data
-				subjects = append(subjects, Subject{
-					SubjectName: SubjectName,
-					Exams:       exams,
-				})
+				subject.SubjectName = SubjectName
+				subjects = append(subjects, subject)
 			}
 		}
 	}
+
+	fmt.Println("Total tokens used:", totalTokensUsed)
 
 	// Saves the subjects as a JSON file
 	bytes, err := json.Marshal(subjects)
