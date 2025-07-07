@@ -100,7 +100,7 @@ func MapExamsInDirectoryToAnswers(ctx context.Context, client *genai.Client, dir
 		},
 		Required: []string{"friendlySubjectName", "year", "exams"},
 	}
-	thinkingBudget := int32(0) // Disables thinking
+	thinkingBudget := int32(512) // Disables thinking if set to 0
 	thinkingConfig := genai.ThinkingConfig{ThinkingBudget: &thinkingBudget}
 
 	// queries the AI for the structure
