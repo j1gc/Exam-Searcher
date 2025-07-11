@@ -14,3 +14,5 @@ Here is the current state of the project:
 - [ ] Expanded the backend API to make filtering by the frontend possible
 - [ ] Created a frontend
 - [ ] Deployed the front- and backend code to Google Cloud Platforms Cloud Run service
+
+Please be advised that the code quality is currently at a hackathon level
