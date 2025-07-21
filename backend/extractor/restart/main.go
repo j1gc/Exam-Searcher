@@ -463,8 +463,9 @@ func main() {
 		yearAndSubject := mapping[getSubjectDirectoryOfFile(result.File)]
 
 		savedFile, err := queryTx.InsertFile(sqlCtx, repository.InsertFileParams{
-			FilePath: result.File.path,
-			Year:     int64(yearAndSubject.Year),
+			FilePath:    result.File.path,
+			Year:        int64(yearAndSubject.Year),
+			EmbeddingID: -1,
 		})
 		if err != nil {
 			log.Fatal("Insert error:", err)
@@ -484,7 +485,6 @@ func main() {
 			_, err = queryTx.InsertExam(sqlCtx, repository.InsertExamParams{
 				SubjectID:         subject.ID,
 				FileID:            file.FileID,
-				EmbeddingID:       -1,
 				ExamType:          result.HeaderExam.ExamType,
 				Difficulty:        result.HeaderExam.Difficulty,
 				TaskLabel:         result.HeaderExam.TaskLabel,
@@ -495,18 +495,16 @@ func main() {
 			}
 		case "answer":
 			_, err = queryTx.InsertAnswer(sqlCtx, repository.InsertAnswerParams{
-				SubjectID:   subject.ID,
-				FileID:      file.FileID,
-				EmbeddingID: -1,
+				SubjectID: subject.ID,
+				FileID:    file.FileID,
 			})
 			if err != nil {
 				log.Fatal("Insert error:", err)
 			}
 		case "other":
 			_, err = queryTx.InsertOther(sqlCtx, repository.InsertOtherParams{
-				FileID:      file.FileID,
-				SubjectID:   subject.ID,
-				EmbeddingID: -1,
+				FileID:    file.FileID,
+				SubjectID: subject.ID,
 			})
 		}
 

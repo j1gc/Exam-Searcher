@@ -1,5 +1,3 @@
-
-
 use std::{fs, io, };
 use std::collections::HashMap;
 use std::fs::DirEntry;
@@ -313,6 +311,12 @@ async fn search(State(state): State<Arc<AppState>>, Json(req): Json<SearchReques
     return (StatusCode::OK, Json(results[0..20].to_vec()));
 }
 
+#[derive(Debug, sqlx::FromRow)]
+struct DBFile {
+    file_id: Option<i64>,
+    file_path: Option<String>,
+}
+
 
 #[tokio::main]
 async fn main() {
@@ -331,6 +335,21 @@ async fn main() {
         s.load_embeddings(embedding_path.to_string());
         println!("Loaded embeddings from file");
     }
+
+    let pool = sqlx::sqlite::SqlitePool::connect("sqlite:///home/pc/Desktop/web/exam/backend/indexer/db.sqlite3").await.unwrap();
+
+   let db_files: Vec<DBFile> = sqlx::query_as!(DBFile, r#"SELECT file.file_id, file.file_path from file"#)
+       .fetch_all(&pool)
+       .await
+       .unwrap();
+
+    db_files.iter().for_each(|file| {
+        println!("{:?}", file);
+    });
+
+    s.documents.iter().for_each(|doc| {
+        println!("{:?}", doc.path);
+    });
 
     let app_state = Arc::new(AppState {
         searcher: s,

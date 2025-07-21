@@ -13,23 +13,23 @@ VALUES  (?)
 RETURNING *;
 
 -- name: InsertFile :one
-INSERT INTO file (file_path, year)
-VALUES (?, ?)
+INSERT INTO file (file_path, year, embedding_id)
+VALUES (?, ?, ?)
 RETURNING *;
 
 -- name: InsertExam :one
-INSERT INTO exam (subject_id, file_id, embedding_id,exam_type, difficulty, work_time_in_minutes, task_label)
-VALUES (?, ?, ?, ?, ?, ?, ?)
+INSERT INTO exam (subject_id, file_id,exam_type, difficulty, work_time_in_minutes, task_label)
+VALUES (?, ?, ?, ?, ?, ?)
 RETURNING *;
 
 -- name: InsertAnswer :one
-INSERT INTO answer (subject_id, file_id, embedding_id)
-VALUES (?, ?, ?)
+INSERT INTO answer (subject_id, file_id)
+VALUES (?, ?)
 RETURNING *;
 
 -- name: InsertOther :one
-INSERT INTO other (file_id, subject_id, embedding_id)
-VALUES (?, ?, ?)
+INSERT INTO other (file_id, subject_id)
+VALUES (?, ?)
 RETURNING *;
 
 -- name: InsertDocumentEmbedding :one

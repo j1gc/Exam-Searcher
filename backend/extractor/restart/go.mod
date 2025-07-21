@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/joho/godotenv v1.5.1
-	google.golang.org/genai v1.14.0
+	google.golang.org/genai v1.16.0
 	modernc.org/sqlite v1.38.0
 )
 
