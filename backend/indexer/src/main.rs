@@ -8,7 +8,9 @@ use axum::{Json, Router};
 use axum::extract::State;
 use axum::routing::post;
 use markdown::mdast::Node;
+use postcard::to_stdvec;
 use serde::{Serialize, Deserialize};
+use sqlx::{ FromRow, Pool,  Sqlite};
 
 fn get_text_from_markdown_tree(node: &Node, text_buffer: &mut String) {
     match node {
@@ -133,6 +135,7 @@ fn cosine_similarity(
 }
 #[derive(Serialize, Deserialize, Debug)]
 struct Document {
+    id: i64,
     path: String,
     words: Vec<String>,
     word_occurrences: HashMap<String, u32>,
@@ -194,7 +197,7 @@ impl Searcher {
         // gets the number of documents that contain a term
         let documents_word_occurrences: Vec<_> = self.documents.iter().map(|doc| doc.get_word_occurrences()).collect();
         for document_word_occurrences in documents_word_occurrences.iter() {
-            for (term, count) in document_word_occurrences.iter() {
+            for (term, _) in document_word_occurrences.iter() {
                 *idf.entry(term.to_string()).or_insert(0.0) += 1.0;
 
             }
@@ -215,15 +218,18 @@ impl Searcher {
         self.idf = deserialized_embeddings.idf;
     }
 
-    fn load_documents(&mut self, path: String) {
+    async fn load_documents(&mut self, path: String, db_connection: &Pool<Sqlite>) {
         let mut collected_documents = Vec::new();
 
         // load words
         visit_dirs(path.as_ref(), &mut |entry| {
             match collect_text_from_markdown_file(entry) {
                 Ok(contents) => {
+                    let document_path = entry.path().to_str().unwrap().to_string();
+
                     let mut current_document = Document {
-                        path: entry.path().to_str().unwrap().to_string(),
+                        id: -1,
+                        path: document_path,
                         words: Vec::new(),
                         word_occurrences: HashMap::new(),
                         tf: HashMap::new(),
@@ -257,12 +263,28 @@ impl Searcher {
         self.documents.iter_mut().for_each(|doc| {
             println!("Computing tf_idf for doc:{:?}", doc.path);
             doc.compute_tf_idf(&self.idf);
-        })
+        });
+
+        for doc in self.documents.iter_mut() {
+            let db_file_path = format!("../{}", doc.path);
+            println!("Saving embedding in sqlite: {:?}", doc.path);
+
+            let db_embedding: DBEmbedding = sqlx::query_as( r#"INSERT INTO document_embedding (embedding) VALUES (?) RETURNING *;"#)
+                .bind(&db_file_path)
+                .fetch_one(db_connection)
+                .await
+                .unwrap();
+
+            doc.id = db_embedding.embedding_id.unwrap();
+
+            sqlx::query("UPDATE file SET embedding_id = ? WHERE file_path = ?").bind(db_embedding.embedding_id).bind(db_file_path).execute(db_connection).await.unwrap();
+        }
     }
 
     fn search_documents(&self, query: String) -> Vec<QueryReturn> {
         let query_words = collect_words_in_document(&query);
         let mut query_doc = Document{
+            id: 0,
             path: "query".to_string(),
             words: query_words,
             word_occurrences: HashMap::new(),
@@ -288,38 +310,181 @@ impl Searcher {
         similarities
     }
 
-    fn save_embeddings(&self, file_path: String) {
+     fn save_embeddings(&self, file_path: String) {
         let embedding_file_content: Vec<u8> = postcard::to_stdvec(&self).unwrap();
         fs::write(file_path, embedding_file_content).unwrap();
     }
 }
 
+#[derive(Debug, FromRow)]
+struct ExamFile {
+    // exam
+    exam_id: Option<i64>,
+    subject_id: Option<i64>,
+    exam_type: Option<String>,
+    difficulty: Option<String>,
+    task_label: Option<String>,
+    work_time_in_minutes: Option<i64>,
+    // file
+    file_id: Option<i64>,
+    year: Option<i64>,
+    file_path: Option<String>,
+    embedding_id: Option<i64>,
+}
+
+#[derive(Debug, FromRow)]
+struct AnswerFile {
+    // answer
+    answer_id: Option<i64>,
+    subject_id: Option<i64>,
+    // file
+    file_id: Option<i64>,
+    year: Option<i64>,
+    file_path: Option<String>,
+    embedding_id: Option<i64>,
+}
+
+#[derive(Debug, FromRow)]
+struct OtherFile {
+    // other
+    other_id: Option<i64>,
+    subject_id: Option<i64>,
+    // file
+    file_id: Option<i64>,
+    year: Option<i64>,
+    file_path: Option<String>,
+    embedding_id: Option<i64>,
+}
+
 #[derive(serde::Deserialize)]
+#[derive(Debug)]
 struct SearchRequest {
     query: String,
+    file_types: Option<Vec<String>>,
+    subject_ids: Option<Vec<i64>>,
+    years: Option<Vec<i64>>,
 }
 
 struct AppState {
     searcher: Searcher,
+    db_connection: Pool<Sqlite>,
+}
+
+fn combine_vec_to_string<T: std::fmt::Display>(vec: &Option<Vec<T>>) -> Option<String> {
+
+    vec.as_ref().and_then(|vec| {
+        if vec.is_empty() {
+            None
+        } else {
+            if vec.len() == 1 {
+                return Some(format!(",{},", vec[0].to_string()));
+            }
+
+            let joined_vec = vec.iter()
+                .map(|t| t.to_string())
+                .collect::<Vec<String>>()
+                .join(",");
+            Some(format!(",{}", joined_vec))
+        }
+    })
 }
 
 #[axum::debug_handler]
 async fn search(State(state): State<Arc<AppState>>, Json(req): Json<SearchRequest>) -> (StatusCode, Json<Vec<QueryReturn>>) {
-    let mut results = state.searcher.search_documents(req.query);
+
+    let subject_id_string = combine_vec_to_string(&req.subject_ids);
+    let year_string = combine_vec_to_string(&req.years);
+    println!("year string: {:?}", year_string);
+    
+    if let Some(mut file_types) = req.file_types.clone() {
+        // for deduplication sorting is needed first
+        file_types.sort();
+        file_types.dedup();
+
+        for file_type in &file_types {
+            match file_type.as_str() {
+                "exam" => {
+                    let exams: Vec<ExamFile> = sqlx::query_as!(ExamFile, r#"
+                            SELECT
+                                file.file_id,
+                                file.file_path,
+                                file.year,
+                                file.embedding_id,
+                                e.exam_id,
+                                e.subject_id,
+                                e.exam_type,
+                                e.difficulty,
+                                e.task_label,
+                                e.work_time_in_minutes
+                            FROM
+                                file
+                                    INNER JOIN main.exam e ON file.file_id = e.file_id
+                                    AND (?1 IS NULL OR INSTR(?1, ',' || e.subject_id || ','))
+                            WHERE
+                               (?2 IS NULL OR INSTR(?2, ',' || file.year || ','))
+                        "#, subject_id_string, year_string).fetch_all(&state.db_connection).await.unwrap();
+                    println!("{:?}", exams);
+                }
+                "answer" => {
+                    let answers: Vec<AnswerFile> = sqlx::query_as!(AnswerFile, r#"
+                            SELECT
+                                file.file_id,
+                                file.file_path,
+                                file.year,
+                                file.embedding_id,
+                                a.answer_id,
+                                a.subject_id
+                            FROM
+                                file
+                                    INNER JOIN main.answer a ON file.file_id = a.file_id
+                                    AND (?1 IS NULL OR INSTR(?1, ',' || a.subject_id || ','))
+                            WHERE
+                               (?2 IS NULL OR INSTR(?2, ',' || file.year || ','))
+                        "#, subject_id_string, year_string).fetch_all(&state.db_connection).await.unwrap();
+                }
+                "other" => {
+                    let other: Vec<OtherFile> = sqlx::query_as!(OtherFile, r#"
+                            SELECT
+                                file.file_id,
+                                file.file_path,
+                                file.year,
+                                file.embedding_id,
+                                o.other_id,
+                                o.subject_id
+                            FROM
+                                file
+                                    INNER JOIN main.other o ON file.file_id = o.file_id
+                                    AND (?1 IS NULL OR INSTR(?1, ',' || o.subject_id || ','))
+                            WHERE
+                               (?2 IS NULL OR INSTR(?2, ',' || file.year || ','))
+                        "#, subject_id_string, year_string).fetch_all(&state.db_connection).await.unwrap();
+                }
+                _ => {
+                }
+            }
+        }
+    }
+
+
+    let mut results = state.searcher.search_documents(req.query.clone());
     results.sort_by(|a, b| b.similarity.partial_cmp(&a.similarity).unwrap());
+
+    println!("{:?}", req);
 
     return (StatusCode::OK, Json(results[0..20].to_vec()));
 }
 
 #[derive(Debug, sqlx::FromRow)]
-struct DBFile {
-    file_id: Option<i64>,
-    file_path: Option<String>,
+struct DBEmbedding {
+    embedding_id: Option<i64>,
+    embedding: Option<String>,
 }
 
 
 #[tokio::main]
 async fn main() {
+    let pool = sqlx::sqlite::SqlitePool::connect("sqlite:///home/pc/Desktop/web/exam/backend/indexer/db.sqlite3").await.unwrap();
+
     let mut s = Searcher {
         documents: Vec::new(),
         idf: HashMap::new(),
@@ -328,7 +493,7 @@ async fn main() {
     let embedding_path = "./embeddings.postcard";
 
     if !Path::new(embedding_path).exists() {
-        s.load_documents("../exams/markdown/".to_string());
+        s.load_documents("../exams/markdown/".to_string(), &pool).await;
         s.save_embeddings(embedding_path.to_string());
         println!("Saved embeddings to file");
     } else {
@@ -336,23 +501,9 @@ async fn main() {
         println!("Loaded embeddings from file");
     }
 
-    let pool = sqlx::sqlite::SqlitePool::connect("sqlite:///home/pc/Desktop/web/exam/backend/indexer/db.sqlite3").await.unwrap();
-
-   let db_files: Vec<DBFile> = sqlx::query_as!(DBFile, r#"SELECT file.file_id, file.file_path from file"#)
-       .fetch_all(&pool)
-       .await
-       .unwrap();
-
-    db_files.iter().for_each(|file| {
-        println!("{:?}", file);
-    });
-
-    s.documents.iter().for_each(|doc| {
-        println!("{:?}", doc.path);
-    });
-
     let app_state = Arc::new(AppState {
         searcher: s,
+        db_connection: pool,
     });
 
     let app = Router::new()

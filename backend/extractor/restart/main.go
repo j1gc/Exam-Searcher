@@ -87,7 +87,7 @@ func ParseHeaderExam(headerString string, client *genai.Client) (HeaderExam, err
 			},
 			"task_label": {
 				Type:        genai.TypeString,
-				Description: "The task label eg: Aufgabe I or Wahlteil Rechnertyp: GTR, Prüfungsteil B Rechnertyp: CAS Analysis but not for example Betriebswirtschaft mit Rechnungswesen-Controlling.",
+				Description: "The task label eg: Aufgabe I or Wahlteil Rechnertyp: GTR, Prüfungsteil B Rechnertyp: CAS Analysis etc. but not for example Betriebswirtschaft mit Rechnungswesen-Controlling.",
 			},
 			"difficulty": {
 				Type:        genai.TypeString,
