@@ -49,6 +49,15 @@ export const FileResponseSchema = z.object({
 	similarity: z.float32()
 });
 
+export const SearchRequestSchema = z.object({
+	query: z.string(),
+	file_types: z.array(z.string()),
+	subject_ids: z.array(z.number()),
+	years: z.array(z.number())
+});
+
 export const FilesResponseSchema = z.array(FileResponseSchema);
 
 export type FilesResponseSchema = z.infer<typeof FilesResponseSchema>;
+
+export type SearchRequestSchema = z.infer<typeof SearchRequestSchema>;

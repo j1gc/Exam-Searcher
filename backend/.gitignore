@@ -1,0 +1,4 @@
+db.sqlite3
+embeddings.postcard
+file_header_mapping.json
+year_subject_mapping.json
