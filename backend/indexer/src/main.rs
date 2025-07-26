@@ -11,6 +11,7 @@ use markdown::mdast::Node;
 use postcard::to_stdvec;
 use serde::{Serialize, Deserialize};
 use sqlx::{ FromRow, Pool,  Sqlite};
+use tower_http::cors::CorsLayer;
 
 fn get_text_from_markdown_tree(node: &Node, text_buffer: &mut String) {
     match node {
@@ -179,7 +180,7 @@ impl Document {
 #[derive(Clone)]
 #[derive(serde::Serialize)]
 struct QueryReturn {
-    document_path: String,
+    embedding_id: i64,
     similarity: f32,
 }
 
@@ -281,7 +282,7 @@ impl Searcher {
         }
     }
 
-    fn search_documents(&self, query: String) -> Vec<QueryReturn> {
+    fn search_documents(&self, query: String) -> HashMap<i64, QueryReturn> {
         let query_words = collect_words_in_document(&query);
         let mut query_doc = Document{
             id: 0,
@@ -295,13 +296,14 @@ impl Searcher {
         query_doc.compute_tf_idf(&self.idf);
         //let query_doc_as_vector: Vec<_> = query_doc.tf_idf.values().collect();
 
-        let mut similarities: Vec<QueryReturn> = Vec::new();
+        let mut similarities= HashMap::new();
+
         for doc in self.documents.iter() {
             //let doc_as_vector: Vec<_> = doc.tf_idf.values().collect();
 
             let similarity = cosine_similarity(&query_doc.tf_idf, &doc.tf_idf );
-            similarities.push(QueryReturn {
-                document_path: doc.path.clone(),
+            similarities.insert(doc.id,QueryReturn {
+                embedding_id: doc.id,
                 similarity,
             });
         }
@@ -316,7 +318,8 @@ impl Searcher {
     }
 }
 
-#[derive(Debug, FromRow)]
+#[derive(Debug, FromRow, Serialize)]
+#[derive(Clone)]
 struct ExamFile {
     // exam
     exam_id: Option<i64>,
@@ -332,7 +335,8 @@ struct ExamFile {
     embedding_id: Option<i64>,
 }
 
-#[derive(Debug, FromRow)]
+#[derive(Debug, FromRow, Serialize)]
+#[derive(Clone)]
 struct AnswerFile {
     // answer
     answer_id: Option<i64>,
@@ -344,7 +348,8 @@ struct AnswerFile {
     embedding_id: Option<i64>,
 }
 
-#[derive(Debug, FromRow)]
+#[derive(Debug, FromRow, Serialize)]
+#[derive(Clone)]
 struct OtherFile {
     // other
     other_id: Option<i64>,
@@ -370,6 +375,34 @@ struct AppState {
     db_connection: Pool<Sqlite>,
 }
 
+#[derive(Debug, Serialize)]
+enum FileTypes {
+    Exam(ExamFile),
+    Answer(AnswerFile),
+    Other(OtherFile),
+}
+
+#[derive(Debug, Serialize)]
+struct FileResponsePart {
+    file_type: String,
+    file: FileTypes,
+    similarity: f32
+}
+
+impl FileResponsePart {
+    pub fn get_file_path(&self) -> Option<&String> {
+        match &self.file {
+            FileTypes::Exam(exam) => exam.file_path.as_ref(),
+            FileTypes::Answer(answer) => answer.file_path.as_ref(),
+            FileTypes::Other(other) => other.file_path.as_ref(),
+        }
+    }
+}
+
+struct SearchResponse {
+    files: Vec<FileResponsePart>,
+}
+
 fn combine_vec_to_string<T: std::fmt::Display>(vec: &Option<Vec<T>>) -> Option<String> {
 
     vec.as_ref().and_then(|vec| {
@@ -390,11 +423,16 @@ fn combine_vec_to_string<T: std::fmt::Display>(vec: &Option<Vec<T>>) -> Option<S
 }
 
 #[axum::debug_handler]
-async fn search(State(state): State<Arc<AppState>>, Json(req): Json<SearchRequest>) -> (StatusCode, Json<Vec<QueryReturn>>) {
+async fn search(State(state): State<Arc<AppState>>, Json(req): Json<SearchRequest>) -> (StatusCode, Json<Vec<FileResponsePart>>) {
 
     let subject_id_string = combine_vec_to_string(&req.subject_ids);
     let year_string = combine_vec_to_string(&req.years);
     println!("year string: {:?}", year_string);
+
+
+    let doc_similarities = state.searcher.search_documents(req.query.clone());
+
+    let mut files: Vec<FileResponsePart> = Vec::new();
     
     if let Some(mut file_types) = req.file_types.clone() {
         // for deduplication sorting is needed first
@@ -423,7 +461,14 @@ async fn search(State(state): State<Arc<AppState>>, Json(req): Json<SearchReques
                             WHERE
                                (?2 IS NULL OR INSTR(?2, ',' || file.year || ','))
                         "#, subject_id_string, year_string).fetch_all(&state.db_connection).await.unwrap();
-                    println!("{:?}", exams);
+
+                    for exam in exams.iter() {
+                        files.push(FileResponsePart {
+                            file_type: "exam".to_string(),
+                            file: FileTypes::Exam(exam.clone()),
+                            similarity: doc_similarities.get(&exam.embedding_id.unwrap()).unwrap().similarity,
+                        });
+                    }
                 }
                 "answer" => {
                     let answers: Vec<AnswerFile> = sqlx::query_as!(AnswerFile, r#"
@@ -441,6 +486,14 @@ async fn search(State(state): State<Arc<AppState>>, Json(req): Json<SearchReques
                             WHERE
                                (?2 IS NULL OR INSTR(?2, ',' || file.year || ','))
                         "#, subject_id_string, year_string).fetch_all(&state.db_connection).await.unwrap();
+
+                    for answer in answers.iter() {
+                        files.push(FileResponsePart {
+                            file_type: "answer".to_string(),
+                            file: FileTypes::Answer(answer.clone()),
+                            similarity: doc_similarities.get(&answer.embedding_id.unwrap()).unwrap().similarity,
+                        });
+                    }
                 }
                 "other" => {
                     let other: Vec<OtherFile> = sqlx::query_as!(OtherFile, r#"
@@ -458,6 +511,14 @@ async fn search(State(state): State<Arc<AppState>>, Json(req): Json<SearchReques
                             WHERE
                                (?2 IS NULL OR INSTR(?2, ',' || file.year || ','))
                         "#, subject_id_string, year_string).fetch_all(&state.db_connection).await.unwrap();
+
+                    for other in other.iter() {
+                        files.push(FileResponsePart {
+                            file_type: "other".to_string(),
+                            file: FileTypes::Other(other.clone()),
+                            similarity: doc_similarities.get(&other.embedding_id.unwrap()).unwrap().similarity,
+                        });
+                    }
                 }
                 _ => {
                 }
@@ -466,12 +527,12 @@ async fn search(State(state): State<Arc<AppState>>, Json(req): Json<SearchReques
     }
 
 
-    let mut results = state.searcher.search_documents(req.query.clone());
-    results.sort_by(|a, b| b.similarity.partial_cmp(&a.similarity).unwrap());
+    files.sort_by(|a, b| b.similarity.partial_cmp(&a.similarity).unwrap());
 
     println!("{:?}", req);
+    files.truncate(20);
 
-    return (StatusCode::OK, Json(results[0..20].to_vec()));
+    return (StatusCode::OK, Json(files));
 }
 
 #[derive(Debug, sqlx::FromRow)]
@@ -507,7 +568,8 @@ async fn main() {
     });
 
     let app = Router::new()
-        .route("/search", post(search)).with_state(app_state);
+        .route("/search", post(search)).with_state(app_state)
+        .layer(CorsLayer::permissive()); // TODO: change to real cors layer when deploying to prod
 
     println!("Listening on http://127.0.0.1:3000");
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await.unwrap();
