@@ -1,16 +1,16 @@
 <script lang="ts">
 	import * as Form from '$lib/components/ui/form/index.js';
-
+	import { Separator } from '$lib/components/ui/separator/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { FilesResponseSchema, SearchRequestSchema } from '$lib/schemas/search.js';
-	import subjectMappingJson from '../lib/subject_mapping.json';
-	import { SubjectMappingSchema } from '$lib/schemas/subject_mapping.js';
-	import { get } from 'svelte/store';
+
 	import SubjectFilter from '$lib/components/custom/subject-filter.svelte';
 	import FileTypeFilter from '$lib/components/custom/file-type-filter.svelte';
-
-	let subjectMappingData: SubjectMappingSchema = SubjectMappingSchema.parse(subjectMappingJson);
-	let subjectMapping = new Map(subjectMappingData.map((subject) => [subject.id, subject.name]));
+	import FileCard from '$lib/components/custom/file-card.svelte';
+	import YearFilter from '$lib/components/custom/year-filter.svelte';
+	import Checkbox from '$lib/components/ui/checkbox/checkbox.svelte';
+	import { subjectMapping } from '$lib/subject_mapping.svelte';
+	import Slider from '$lib/components/ui/slider/slider.svelte';
 
 	async function runQuery(): Promise<FilesResponseSchema> {
 		const searchData: SearchRequestSchema = {
@@ -35,6 +35,7 @@
 	let searchQuery = $state('');
 	let selectedSubjectIds: number[] = $state([]);
 	let selectedFileTypes: string[] = $state(['exam', 'answer', 'other']);
+	let selectedYears: number[] = $state([2016, 2024]);
 
 	let returnedFiles: FilesResponseSchema | undefined = $state();
 
@@ -44,28 +45,52 @@
 </script>
 
 <main>
-	<h1 class="mb-10 text-3xl font-bold">Finde Prüfungen bei Text, Fach und Jahr</h1>
+	<div class="px-14 py-10">
+		<h1 class="mb-10 text-3xl font-bold">Finde Prüfungen und Lösungen bei Text, Fach und Jahr</h1>
 
-	<Input placeholder={'Suche bei Text, Fach und Jahr'} bind:value={searchQuery} class="py-7" />
+		<Input placeholder={'Suche bei Text, Fach und Jahr'} bind:value={searchQuery} class="py-7" />
 
-	<div class="flex justify-between pt-5">
-		<SubjectFilter {subjectMapping} bind:value={selectedSubjectIds} />
-		<FileTypeFilter bind:value={selectedFileTypes} />
-		<FileTypeFilter bind:value={selectedFileTypes} />
-	</div>
-	{#if returnedFiles}
-		<h1 class="text-2xl">Files Returned:</h1>
-		<div>
-			{#each returnedFiles as file}
-				<div class="flex gap-4">
-					<p>{file.file_type}</p>
-					<p>{file.similarity}</p>
-					{#if 'Exam' in file.file}
-						<p>{file.file.Exam.file_path}</p>
-						<p>{subjectMapping.get(file.file.Exam.subject_id)}</p>
-					{/if}
-				</div>
-			{/each}
+		<div class="flex justify-between pt-5">
+			<SubjectFilter bind:value={selectedSubjectIds} />
+			<YearFilter bind:value={selectedYears} />
+			<FileTypeFilter bind:value={selectedFileTypes} />
 		</div>
-	{/if}
+	</div>
+	<div class="flex bg-white px-14">
+		<div class="mr-5 w-72 border-r-1 pt-10 pr-5">
+			<p class="text-2xl font-semibold">Angewandte Filter</p>
+			<div class="pt-4">
+				<p class="font-semibold">Fächer</p>
+				<div>
+					{#each selectedSubjectIds as id}
+						<div class="flex items-center gap-2">
+							<Checkbox
+								checked={true}
+								onclick={(ev) => {
+									const idIndex = selectedSubjectIds.indexOf(id);
+									selectedSubjectIds.splice(idIndex, 1);
+								}}
+							/>
+							<span>{subjectMapping.get(id)}</span>
+						</div>
+					{/each}
+				</div>
+			</div>
+			<div class="pt-5">
+				<p class="pb-2 font-semibold">Jahre</p>
+				<p>{selectedYears[0]}--{selectedYears[1]}</p>
+				<Slider type="multiple" bind:value={selectedYears} min={2016} max={2024} step={1} />
+			</div>
+		</div>
+
+		<div class="pt-10 pl-7">
+			{#if returnedFiles}
+				<div class="flex flex-col gap-y-5">
+					{#each returnedFiles as file}
+						<FileCard {file} />
+					{/each}
+				</div>
+			{/if}
+		</div>
+	</div>
 </main>

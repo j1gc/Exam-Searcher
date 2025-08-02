@@ -56,6 +56,8 @@ export const SearchRequestSchema = z.object({
 	years: z.array(z.number())
 });
 
+export type FileResponseSchema = z.infer<typeof FileResponseSchema>;
+
 export const FilesResponseSchema = z.array(FileResponseSchema);
 
 export type FilesResponseSchema = z.infer<typeof FilesResponseSchema>;

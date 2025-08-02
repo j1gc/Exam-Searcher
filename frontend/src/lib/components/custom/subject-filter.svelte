@@ -1,10 +1,8 @@
 <script lang="ts">
 	import * as Select from '$lib/components/ui/select/index.js';
+	import { subjectMapping } from '$lib/subject_mapping.svelte';
 
-	let {
-		subjectMapping,
-		value = $bindable()
-	}: { subjectMapping: Map<number, string>; value: number[] } = $props();
+	let { value = $bindable() }: { value: number[] } = $props();
 
 	let subjectIdStrings = $state(['-1']);
 

@@ -4,18 +4,16 @@
 	let { value = $bindable() }: { value: string[] } = $props();
 
 	const fileTypes = ['exam', 'answer', 'other'];
-
-	let selectedFileTypes: string[] = $state([]);
 </script>
 
-<Select.Root type="multiple" name="dateitypen" bind:value={selectedFileTypes}>
+<Select.Root type="multiple" name="dateitypen" bind:value>
 	<Select.Trigger class="w-[180px] bg-white">
-		{#if selectedFileTypes.length === 0 || selectedFileTypes.length === fileTypes.length}
+		{#if value.length === 0 || value.length === fileTypes.length}
 			Alle Dateiarten
-		{:else if selectedFileTypes.length > 1}
+		{:else if value.length > 1}
 			Mehere Dateiarten
 		{:else}
-			{selectedFileTypes[0]}
+			{value[0]}
 		{/if}
 	</Select.Trigger>
 	<Select.Content>
