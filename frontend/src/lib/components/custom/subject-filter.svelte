@@ -22,7 +22,7 @@
 </script>
 
 <Select.Root type="multiple" name="fächer" bind:value={subjectIdStrings}>
-	<Select.Trigger class="w-[180px] bg-white">
+	<Select.Trigger class="w-[100%] bg-white">
 		{#if (subjectIdStrings[0] === '-1' && subjectIdStrings.length === 1) || subjectIdStrings.length === subjectMapping.size}
 			Alle Fächer
 		{:else if subjectIdStrings.length > 1}

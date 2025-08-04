@@ -7,7 +7,7 @@
 </script>
 
 <Select.Root type="multiple" name="dateitypen" bind:value>
-	<Select.Trigger class="w-[180px] bg-white">
+	<Select.Trigger class="w-[100%] bg-white">
 		{#if value.length === 0 || value.length === fileTypes.length}
 			Alle Dateiarten
 		{:else if value.length > 1}
