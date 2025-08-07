@@ -11,6 +11,7 @@ use markdown::mdast::Node;
 use postcard::to_stdvec;
 use serde::{Serialize, Deserialize};
 use sqlx::{ FromRow, Pool,  Sqlite};
+use sqlx::query::Query;
 use tower_http::cors::CorsLayer;
 
 fn get_text_from_markdown_tree(node: &Node, text_buffer: &mut String) {
@@ -376,13 +377,14 @@ struct AppState {
 }
 
 #[derive(Debug, Serialize)]
+#[derive(Clone)]
 enum FileTypes {
     Exam(ExamFile),
     Answer(AnswerFile),
     Other(OtherFile),
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 struct FileResponsePart {
     file_type: String,
     file: FileTypes,
@@ -417,15 +419,22 @@ fn combine_vec_to_string<T: std::fmt::Display>(vec: &Option<Vec<T>>) -> Option<S
                 .map(|t| t.to_string())
                 .collect::<Vec<String>>()
                 .join(",");
-            Some(format!(",{}", joined_vec))
+            Some(format!(",{},", joined_vec))
         }
     })
 }
 
+#[derive(Deserialize)]
+struct Pagination {
+    index: usize,
+    page_size: usize,
+}
+
 #[axum::debug_handler]
-async fn search(State(state): State<Arc<AppState>>, Json(req): Json<SearchRequest>) -> (StatusCode, Json<Vec<FileResponsePart>>) {
+async fn search(State(state): State<Arc<AppState>>, pagination: axum::extract::Query<Pagination>, Json(req): Json<SearchRequest>) -> (StatusCode, Json<Vec<FileResponsePart>>) {
 
     let subject_id_string = combine_vec_to_string(&req.subject_ids);
+    println!("subject id string: {:?}", subject_id_string);
     let year_string = combine_vec_to_string(&req.years);
     println!("year string: {:?}", year_string);
 
@@ -530,9 +539,9 @@ async fn search(State(state): State<Arc<AppState>>, Json(req): Json<SearchReques
     files.sort_by(|a, b| b.similarity.partial_cmp(&a.similarity).unwrap());
 
     println!("{:?}", req);
-    //files.truncate(20);
+    let paginated_files = files.chunks(pagination.page_size).nth(pagination.index).unwrap_or(&[]).to_vec();
 
-    return (StatusCode::OK, Json(files));
+    return (StatusCode::OK, Json(paginated_files));
 }
 
 #[derive(Debug, sqlx::FromRow)]
