@@ -8,11 +8,21 @@
 	function filename(file_path: string) {
 		return file_path.substring(file_path.lastIndexOf('/') + 1);
 	}
+
+	const baseBucketURL = 'https://files.exams.jonas-floerke.de';
+
+	function formatFileURL(filePath: string) {
+		// substring removes last 3 chars of path that ends in .md and adds .pdf instead
+		let startRemoved = filePath.replace('../../exams/markdown', '');
+		let url = baseBucketURL + startRemoved.substring(0, startRemoved.length - 3) + '.pdf';
+
+		return url;
+	}
 </script>
 
 <div class="rounded-md ring-[1.5px] ring-gray-200">
 	{#if 'Exam' in file.file}
-		<FileCardOutline fileLink={''}>
+		<FileCardOutline fileLink={formatFileURL(file.file.Exam.file_path)}>
 			<p class="font-semibold">
 				{file.file.Exam.difficulty}
 				{subjectMapping.get(file.file.Exam.subject_id)} Abitur {file.file.Exam.year}
@@ -22,7 +32,7 @@
 		</FileCardOutline>
 	{/if}
 	{#if 'Answer' in file.file}
-		<FileCardOutline fileLink={''}>
+		<FileCardOutline fileLink={formatFileURL(file.file.Answer.file_path)}>
 			<p class="font-semibold">
 				{subjectMapping.get(file.file.Answer.subject_id)}
 				{file.file.Answer.year}
@@ -32,7 +42,7 @@
 		</FileCardOutline>
 	{/if}
 	{#if 'Other' in file.file}
-		<FileCardOutline fileLink={''}>
+		<FileCardOutline fileLink={file.file.Other.file_path}>
 			<p class="font-semibold">
 				{subjectMapping.get(file.file.Other.subject_id)} Abitur {file.file.Other.year}
 			</p>

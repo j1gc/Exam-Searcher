@@ -17,6 +17,6 @@
 		</div>
 	</div>
 	<div>
-		<Button href={fileLink}>Ansehen</Button>
+		<Button href={fileLink} target="_blank">Ansehen</Button>
 	</div>
 </div>

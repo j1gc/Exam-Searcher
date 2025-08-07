@@ -11,7 +11,7 @@
 
 <Carousel.Root
 	opts={{
-		align: 'start'
+		align: 'center'
 	}}
 >
 	<Carousel.Content>
