@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
+	import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
 	import '../app.css';
 
 	let { children } = $props();
+
+	const queryClient = new QueryClient();
 </script>
 
 <div class="h-[100vh] w-[100vw] bg-[#FAF7F3]">
@@ -18,7 +21,9 @@
 			</nav>
 		</header>
 		<main>
-			{@render children()}
+			<QueryClientProvider client={queryClient}>
+				{@render children()}
+			</QueryClientProvider>
 		</main>
 		<footer></footer>
 	</div>

@@ -530,7 +530,7 @@ async fn search(State(state): State<Arc<AppState>>, Json(req): Json<SearchReques
     files.sort_by(|a, b| b.similarity.partial_cmp(&a.similarity).unwrap());
 
     println!("{:?}", req);
-    files.truncate(20);
+    //files.truncate(20);
 
     return (StatusCode::OK, Json(files));
 }

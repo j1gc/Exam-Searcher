@@ -10,6 +10,8 @@
 	import { subjectMapping } from '$lib/subject_mapping.svelte';
 	import Slider from '$lib/components/ui/slider/slider.svelte';
 	import NewestFiles from '$lib/components/custom/newest-files.svelte';
+	import { Debounced } from 'runed';
+	import { createInfiniteQuery, createQuery } from '@tanstack/svelte-query';
 
 	async function runQuery(): Promise<FilesResponseSchema> {
 		let years: number[] = [];
@@ -44,9 +46,26 @@
 	let selectedYears: number[] = $state([2016, 2024]);
 	let returnedFiles: FilesResponseSchema | undefined = $state();
 
-	$effect(() => {
-		runQuery().then((r) => (returnedFiles = r));
-	});
+	const debouncedHandle = new Debounced(() => searchQuery, 350);
+
+	const fileQuery = $derived(
+		createQuery({
+			queryKey: ['fileQuery', debouncedHandle.current],
+			//initialPageParam: '',
+
+			queryFn: async ({ pageParam }) => {
+				return await runQuery();
+			}
+			//getNextPageParam: (lastPage, allPages) => {
+			//	// Return undefined to indicate no more pages
+			//	return undefined;
+			//}
+		})
+	);
+
+	//$effect(() => {
+	//	runQuery().then((r) => (returnedFiles = r));
+	//});
 </script>
 
 <main class="pt-5">
@@ -111,9 +130,9 @@
 
 		<div class="pt-10 pl-7">
 			<h4 class="pb-5 text-2xl font-semibold">Ergebnisse</h4>
-			{#if returnedFiles}
+			{#if $fileQuery.isSuccess}
 				<div class="flex flex-col gap-y-5">
-					{#each returnedFiles as file}
+					{#each $fileQuery.data as file}
 						<FileCard {file} />
 					{/each}
 				</div>
