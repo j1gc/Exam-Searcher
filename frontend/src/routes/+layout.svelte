@@ -2,10 +2,17 @@
 	import { Button } from '$lib/components/ui/button';
 	import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
 	import '../app.css';
+	import { browser } from '$app/environment';
 
 	let { children } = $props();
 
-	const queryClient = new QueryClient();
+	const queryClient = new QueryClient({
+		defaultOptions: {
+			queries: {
+				enabled: browser
+			}
+		}
+	});
 </script>
 
 <div class="h-[100vh] w-[100vw] bg-[#FAF7F3]">

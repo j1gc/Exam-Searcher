@@ -44,13 +44,14 @@
 	let selectedSubjectIds: number[] = $state([]);
 	let selectedFileTypes: string[] = $state(['exam', 'answer', 'other']);
 	let selectedYears: number[] = $state([2016, 2024]);
-	let returnedFiles: FilesResponseSchema | undefined = $state();
 
-	const debouncedHandle = new Debounced(() => searchQuery, 350);
+	// only uses the debouncer when one of these values change
+	const debouncedHandle = new Debounced(() => ({ searchQuery, selectedYears }), 350);
 
 	const fileQuery = $derived(
 		createQuery({
-			queryKey: ['fileQuery', debouncedHandle.current],
+			// only executes the query when one of these values change
+			queryKey: ['fileQuery', debouncedHandle.current, selectedSubjectIds, selectedFileTypes],
 			//initialPageParam: '',
 
 			queryFn: async ({ pageParam }) => {
