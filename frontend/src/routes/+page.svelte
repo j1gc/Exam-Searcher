@@ -12,8 +12,10 @@
 	import NewestFiles from '$lib/components/custom/newest-files.svelte';
 	import { Debounced } from 'runed';
 	import { createInfiniteQuery, createQuery } from '@tanstack/svelte-query';
+	import Button from '$lib/components/ui/button/button.svelte';
+	import { onMount } from 'svelte';
 
-	async function runQuery(): Promise<FilesResponseSchema> {
+	async function runQuery(page: number, pageSize: number): Promise<FilesResponseSchema> {
 		let years: number[] = [];
 		const minYear = Math.min(...selectedYears);
 		const maxYear = Math.max(...selectedYears);
@@ -28,15 +30,18 @@
 			years: years
 		};
 
-		let searchResp = await fetch('http://localhost:3000/search', {
-			method: 'POST',
-			headers: {
-				Accept: 'application/json',
-				'Content-Type': 'application/json'
-			},
+		let searchResp = await fetch(
+			`http://localhost:3000/search?index=${page}&page_size=${pageSize}`,
+			{
+				method: 'POST',
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json'
+				},
 
-			body: JSON.stringify(searchData)
-		});
+				body: JSON.stringify(searchData)
+			}
+		);
 
 		return FilesResponseSchema.parse(await searchResp.json());
 	}
@@ -49,24 +54,40 @@
 	const debouncedHandle = new Debounced(() => ({ searchQuery, selectedYears }), 350);
 
 	const fileQuery = $derived(
-		createQuery({
+		createInfiniteQuery({
 			// only executes the query when one of these values change
 			queryKey: ['fileQuery', debouncedHandle.current, selectedSubjectIds, selectedFileTypes],
-			//initialPageParam: '',
+			initialPageParam: { page: 0, pageSize: 20 },
 
 			queryFn: async ({ pageParam }) => {
-				return await runQuery();
+				return await runQuery(pageParam.page, pageParam.pageSize);
+			},
+			getNextPageParam: (lastPage, allPages) => {
+				// check if last page was a full page
+				if (lastPage.length === 20) {
+					return { page: allPages.length, pageSize: 20 };
+				}
+				// Return undefined to indicate no more pages
+				return undefined;
+			},
+
+			select: (data) => {
+				return data.pages.flat();
 			}
-			//getNextPageParam: (lastPage, allPages) => {
-			//	// Return undefined to indicate no more pages
-			//	return undefined;
-			//}
 		})
 	);
 
-	//$effect(() => {
-	//	runQuery().then((r) => (returnedFiles = r));
-	//});
+	let sentinel: HTMLElement;
+
+	onMount(() => {
+		const observer = new IntersectionObserver((entries) => {
+			if (entries[0].isIntersecting && $fileQuery.hasNextPage) {
+				$fileQuery.fetchNextPage();
+			}
+		});
+
+		observer.observe(sentinel);
+	});
 </script>
 
 <main class="pt-5">
@@ -136,8 +157,21 @@
 					{#each $fileQuery.data as file}
 						<FileCard {file} />
 					{/each}
+					<Button
+						onclick={$fileQuery.fetchNextPage}
+						disabled={!$fileQuery.hasNextPage || $fileQuery.isFetchingNextPage}
+					>
+						{#if $fileQuery.isFetching}
+							Lade...
+						{:else if $fileQuery.hasNextPage}
+							Lade weitere Prüfungen!
+						{:else}
+							Keine weiteren Prüfungen gefunden!
+						{/if}
+					</Button>
 				</div>
 			{/if}
+			<div bind:this={sentinel}></div>
 		</div>
 	</div>
 </main>
