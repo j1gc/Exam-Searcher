@@ -11,7 +11,7 @@
 		return file.substring(0, file.length - 3) + '.pdf';
 	}
 
-	const baseBucketURL = 'https://files.exams.jonas-floerke.de';
+	const baseBucketURL = 'https://examfiles.jonas-floerke.de';
 
 	function formatFileURL(filePath: string) {
 		// substring removes last 3 chars of path that ends in .md and adds .pdf instead
@@ -44,7 +44,7 @@
 		</FileCardOutline>
 	{/if}
 	{#if 'Other' in file.file}
-		<FileCardOutline fileLink={file.file.Other.file_path}>
+		<FileCardOutline fileLink={formatFileURL(file.file.Other.file_path)}>
 			<p class="font-semibold">
 				{subjectMapping.get(file.file.Other.subject_id)} Abitur {file.file.Other.year}
 			</p>

@@ -1,16 +1,17 @@
 use std::{fs, io, };
 use std::collections::HashMap;
+use std::fmt::format;
 use std::fs::DirEntry;
 use std::path::Path;
 use std::sync::Arc;
-use axum::http::StatusCode;
+use axum::http::{Method, StatusCode};
 use axum::{Json, Router};
 use axum::extract::State;
 use axum::routing::post;
 use markdown::mdast::Node;
 use serde::{Serialize, Deserialize};
 use sqlx::{ FromRow, Pool,  Sqlite};
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{Any, CorsLayer};
 
 fn get_text_from_markdown_tree(node: &Node, text_buffer: &mut String) {
     match node {
@@ -574,11 +575,39 @@ async fn main() {
         db_connection: pool,
     });
 
-    let app = Router::new()
-        .route("/search", post(search)).with_state(app_state)
-        .layer(CorsLayer::permissive()); // TODO: change to real cors layer when deploying to prod
 
-    println!("Listening on http://0.0.0.0:3000");
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+
+    let mut app = Router::new().route("/search", post(search)).with_state(app_state);
+
+    if (std::env::var("DEBUG").unwrap_or("".to_string()) == "true") {
+        app = app.layer(CorsLayer::permissive());
+        println!("Running in debug mode");
+    } else {
+        let cors = CorsLayer::new()
+            // allow any headers
+            .allow_headers(Any)
+            .allow_methods([Method::POST])
+            // allow requests from origins
+            .allow_origin(["http://exam.jonas-floerke.de".parse().unwrap(), "https://exam.jonas-floerke.de".parse().unwrap()]);
+
+
+        println!("Running in production mode");
+        app = app.layer(cors);
+    }
+
+
+    match std::env::var("PORT") {
+        Ok(val) => {
+            println!("Listening on http://0.0.0.0:{}", val);
+            let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", val)).await.unwrap();
+            axum::serve(listener, app).await.unwrap();
+        }
+        Err(_) => {
+            println!("Listening on http://0.0.0.0:3000");
+            let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+            axum::serve(listener, app).await.unwrap();
+        }
+    }
+
+
 }

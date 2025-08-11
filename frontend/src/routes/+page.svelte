@@ -14,7 +14,6 @@
 	import { createInfiniteQuery } from '@tanstack/svelte-query';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { onMount } from 'svelte';
-	import { page } from '$app/state';
 	import { m } from '$lib/paraglide/messages';
 
 	async function runQuery(page: number, pageSize: number): Promise<FilesResponseSchema> {
@@ -33,7 +32,7 @@
 		};
 
 		let searchResp = await fetch(
-			`http://localhost:3000/search?index=${page}&page_size=${pageSize}`,
+			`https://exambackend.jonas-floerke.de/search?index=${page}&page_size=${pageSize}`,
 			{
 				method: 'POST',
 				headers: {
@@ -90,8 +89,6 @@
 
 		observer.observe(sentinel);
 	});
-
-	$effect(() => {});
 </script>
 
 <main class="pt-5">
