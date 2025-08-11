@@ -8,10 +8,8 @@ use axum::{Json, Router};
 use axum::extract::State;
 use axum::routing::post;
 use markdown::mdast::Node;
-use postcard::to_stdvec;
 use serde::{Serialize, Deserialize};
 use sqlx::{ FromRow, Pool,  Sqlite};
-use sqlx::query::Query;
 use tower_http::cors::CorsLayer;
 
 fn get_text_from_markdown_tree(node: &Node, text_buffer: &mut String) {
@@ -553,7 +551,7 @@ struct DBEmbedding {
 
 #[tokio::main]
 async fn main() {
-    let pool = sqlx::sqlite::SqlitePool::connect("sqlite:///home/pc/Desktop/web/exam/backend/indexer/db.sqlite3").await.unwrap();
+    let pool = sqlx::sqlite::SqlitePool::connect("sqlite://./db.sqlite3").await.unwrap();
 
     let mut s = Searcher {
         documents: Vec::new(),
@@ -580,7 +578,7 @@ async fn main() {
         .route("/search", post(search)).with_state(app_state)
         .layer(CorsLayer::permissive()); // TODO: change to real cors layer when deploying to prod
 
-    println!("Listening on http://127.0.0.1:3000");
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await.unwrap();
+    println!("Listening on http://0.0.0.0:3000");
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
