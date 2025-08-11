@@ -4,9 +4,19 @@
 	import * as Carousel from '$lib/components/ui/carousel/index.js';
 	import CarouselItem from '../ui/carousel/carousel-item.svelte';
 	import { cn } from '$lib/utils';
+	import { findSubjectIdByName } from '$lib/subject_mapping.svelte';
+
+	let { selectedSubject = $bindable() }: { selectedSubject: number[] } = $props();
 
 	let spacing =
 		'max-[1499px]:basis-[15%] max-[1270px]:basis-[20%] max-[1000px]:basis-[30%] max-[670px]:basis-[40%] max-[580px]:basis-1/2 max-[500px]:basis-full min-[1500px]:basis-[12%]';
+
+	let selectedSubjectName: string = $state('');
+
+	$effect(() => {
+		const subjectId = findSubjectIdByName(selectedSubjectName);
+		selectedSubject = subjectId ? [subjectId] : [];
+	});
 </script>
 
 <Carousel.Root
@@ -16,7 +26,10 @@
 >
 	<Carousel.Content>
 		<CarouselItem class={cn(spacing, '')}>
-			<Button class="h-40 w-40 rounded-lg bg-[#574D68]">
+			<Button
+				class="h-40 w-40 rounded-lg bg-[#574D68]"
+				onclick={() => (selectedSubjectName = 'Spanisch')}
+			>
 				<div class="flex flex-col items-center gap-y-2">
 					<Earth class="size-20" />
 					<p class="text-lg font-semibold">Spanisch</p>
@@ -24,7 +37,9 @@
 			</Button></CarouselItem
 		>
 		<Carousel.Item class={cn(spacing, '')}>
-			<Button class="h-40 w-40 rounded-lg bg-[#8ea4bd]"
+			<Button
+				class="h-40 w-40 rounded-lg bg-[#8ea4bd]"
+				onclick={() => (selectedSubjectName = 'Mathematik')}
 				><div class="flex flex-col items-center gap-y-2">
 					<Sigma class="size-20" />
 					<p class="text-lg font-semibold">Mathematik</p>
@@ -32,7 +47,10 @@
 			</Button></Carousel.Item
 		>
 		<Carousel.Item class={cn(spacing, '')}>
-			<Button class="h-40 w-40 rounded-lg bg-[#e3d3bc] ">
+			<Button
+				class="h-40 w-40 rounded-lg bg-[#e3d3bc] "
+				onclick={() => (selectedSubjectName = 'Deutsch')}
+			>
 				<div class="flex flex-col items-center gap-y-2">
 					<BookOpen class="size-20" />
 					<p class="text-lg font-semibold">Deutsch</p>
@@ -40,7 +58,10 @@
 			</Button></Carousel.Item
 		>
 		<Carousel.Item class={cn(spacing, '')}>
-			<Button class="h-40 w-40 rounded-lg bg-[#84a297]">
+			<Button
+				class="h-40 w-40 rounded-lg bg-[#84a297]"
+				onclick={() => (selectedSubjectName = 'Englisch')}
+			>
 				<div class="flex flex-col items-center gap-y-2">
 					<BookOpenText class="size-20" />
 					<p class="text-lg font-semibold">Englisch</p>
@@ -49,7 +70,10 @@
 		>
 
 		<CarouselItem class={cn(spacing, '')}>
-			<Button class="h-40 w-40 rounded-lg bg-[#c8b494]">
+			<Button
+				class="h-40 w-40 rounded-lg bg-[#c8b494]"
+				onclick={() => (selectedSubjectName = 'Biologie')}
+			>
 				<div class="flex flex-col items-center gap-y-2">
 					<Flower2 class="size-20" />
 					<p class="text-lg font-semibold">Biologie</p>
@@ -57,7 +81,10 @@
 			</Button></CarouselItem
 		>
 		<CarouselItem class={cn(spacing, '')}>
-			<Button class="h-40 w-40 rounded-lg bg-[#5F5449]">
+			<Button
+				class="h-40 w-40 rounded-lg bg-[#5F5449]"
+				onclick={() => (selectedSubjectName = 'Physik')}
+			>
 				<div class="flex flex-col items-center gap-y-2">
 					<Omega class="size-20" />
 					<p class="text-lg font-semibold">Physik</p>

@@ -5,3 +5,7 @@ let subjectMappingData: SubjectMappingSchema = SubjectMappingSchema.parse(subjec
 export let subjectMapping = new Map(
 	subjectMappingData.map((subject) => [subject.id, subject.name])
 );
+
+export function findSubjectIdByName(subjectName: string) {
+	return subjectMappingData.find((v) => v.name === subjectName)?.id;
+}
