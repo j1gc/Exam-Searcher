@@ -12,7 +12,7 @@ Here is the current state of the project:
 - [x] Extracted data for filtering, like the difficulty, whether a file is an exam or an answer, etc., with the help of an LLM API from the markdown documents
 - [x] Saved the filtering data, etc., in a SQLite database for querying
 - [x] Expanded the backend API to make filtering by the frontend possible
-- [ ] Created a frontend
+- [x] Created a frontend
 - [ ] Deployed the front- and backend code to Google Cloud Platforms Cloud Run service
 
 Please be advised that the code quality is currently at a hackathon level
