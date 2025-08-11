@@ -1,4 +1,19 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
-	"hello_world": "Hallo, {name} von Deutschland!"
+	"hello_world": "Hallo, {name} von Deutschland!",
+	"file_view_button": "Ansehen",
+	"file_type_solution": "Lösung",
+	"file_type_exam": "Arbeit",
+	"file_type_other": "Anderes",
+	"website_title": "Prüfungssucher Niedersachsen",
+	"search_field_text": "Suche Prüfungen mit Inhalt",
+	"year_filter_dropdown": "Jahre zwischen:",
+	"filter_all": "Alle",
+	"filter_multiple": "Mehrere",
+	"file_type_text": "Dateiarten",
+	"filter_subject_text": "Fächer",
+	"results_text": "Ergebnisse",
+	"years_text": "Jahre",
+	"premis_text": "Finde Prüfungen und Lösungen bei Text, Fach und Jahr",
+	"newest_files_text": "Neuste Prüfungen:"
 }

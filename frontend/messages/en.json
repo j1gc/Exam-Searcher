@@ -1,4 +1,19 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
-	"hello_world": "Hello, {name} from en!"
+	"hello_world": "Hello, {name} from en!",
+	"file_view_button": "View",
+	"file_type_solution": "Solution",
+	"file_type_exam": "Exam",
+	"file_type_other": "Other",
+	"website_title": "Exam Searcher: Lower Saxony",
+	"search_field_text": "Find files by content",
+	"year_filter_dropdown": "Years between:",
+	"filter_all": "All",
+	"filter_multiple": "Multiple",
+	"file_type_text": "file types",
+	"filter_subject_text": "subjects",
+	"results_text": "Results",
+	"years_text": "Years",
+	"premis_text": "Find exams and solutions by content, subject and year",
+	"newest_files_text": "Newest files in:"
 }

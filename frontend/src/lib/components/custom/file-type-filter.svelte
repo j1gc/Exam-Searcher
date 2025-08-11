@@ -1,5 +1,6 @@
 <script lang="ts">
 	import * as Select from '$lib/components/ui/select/index.js';
+	import { m } from '$lib/paraglide/messages';
 
 	let { value = $bindable() }: { value: string[] } = $props();
 
@@ -9,9 +10,9 @@
 <Select.Root type="multiple" name="dateitypen" bind:value>
 	<Select.Trigger class="w-[100%] bg-white">
 		{#if value.length === 0 || value.length === fileTypes.length}
-			Alle Dateiarten
+			{m.filter_all()} {m.file_type_text()}
 		{:else if value.length > 1}
-			Mehere Dateiarten
+			{m.filter_multiple()} {m.file_type_text()}
 		{:else}
 			{value[0]}
 		{/if}

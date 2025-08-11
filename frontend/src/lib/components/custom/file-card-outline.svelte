@@ -2,6 +2,7 @@
 	import { FileText } from 'lucide-svelte';
 	import { Button } from '../ui/button';
 	import type { Snippet } from 'svelte';
+	import { m } from '$lib/paraglide/messages';
 
 	let { children, fileLink }: { children: Snippet<[]> | undefined; fileLink: string } = $props();
 </script>
@@ -17,6 +18,6 @@
 		</div>
 	</div>
 	<div>
-		<Button href={fileLink} target="_blank" class="max-sm:p-1">Ansehen</Button>
+		<Button href={fileLink} target="_blank" class="max-sm:p-1">{m.file_view_button()}</Button>
 	</div>
 </div>

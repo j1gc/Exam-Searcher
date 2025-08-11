@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import type { FileResponseSchema } from '$lib/schemas/search';
 	import { subjectMapping } from '$lib/subject_mapping.svelte';
 	import FileCardOutline from './file-card-outline.svelte';
@@ -6,7 +7,8 @@
 	let { file }: { file: FileResponseSchema } = $props();
 
 	function filename(file_path: string) {
-		return file_path.substring(file_path.lastIndexOf('/') + 1);
+		let file = file_path.substring(file_path.lastIndexOf('/') + 1);
+		return file.substring(0, file.length - 3) + '.pdf';
 	}
 
 	const baseBucketURL = 'https://files.exams.jonas-floerke.de';
@@ -27,7 +29,7 @@
 				{file.file.Exam.difficulty}
 				{subjectMapping.get(file.file.Exam.subject_id)} Abitur {file.file.Exam.year}
 			</p>
-			<p>Prüfung</p>
+			<p>{m.file_type_exam()}</p>
 			<p>{filename(file.file.Exam.file_path)}</p>
 		</FileCardOutline>
 	{/if}
@@ -37,7 +39,7 @@
 				{subjectMapping.get(file.file.Answer.subject_id)}
 				{file.file.Answer.year}
 			</p>
-			<p>Lösung</p>
+			<p>{m.file_type_solution()}</p>
 			<p>{filename(file.file.Answer.file_path)}</p>
 		</FileCardOutline>
 	{/if}
@@ -46,7 +48,7 @@
 			<p class="font-semibold">
 				{subjectMapping.get(file.file.Other.subject_id)} Abitur {file.file.Other.year}
 			</p>
-			<p>Anderes</p>
+			<p>{m.file_type_other()}</p>
 			<p>{filename(file.file.Other.file_path)}</p>
 		</FileCardOutline>
 	{/if}

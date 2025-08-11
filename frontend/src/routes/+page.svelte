@@ -15,6 +15,7 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
+	import { m } from '$lib/paraglide/messages';
 
 	async function runQuery(page: number, pageSize: number): Promise<FilesResponseSchema> {
 		let years: number[] = [];
@@ -96,10 +97,10 @@
 <main class="pt-5">
 	<div class="px-14 pb-10">
 		<h1 class="mb-10 text-3xl font-bold text-primary">
-			Finde Prüfungen und Lösungen bei Text, Fach und Jahr
+			{m.premis_text()}
 		</h1>
 
-		<Input placeholder={'Suche Prüfungen bei Text'} bind:value={searchQuery} class="py-7" />
+		<Input placeholder={m.search_field_text()} bind:value={searchQuery} class="py-7" />
 
 		<div class="justify-between gap-x-2 pt-5 min-sm:flex">
 			<SubjectFilter bind:value={selectedSubjectIds} />
@@ -107,7 +108,7 @@
 			<FileTypeFilter bind:value={selectedFileTypes} />
 		</div>
 		<div class="pt-7">
-			<h3 class="pb-3 font-semibold">Neuste Prüfungen:</h3>
+			<h3 class="pb-3 font-semibold">{m.newest_files_text()}</h3>
 			<NewestFiles bind:selectedSubject={selectedSubjectIds} />
 		</div>
 	</div>
@@ -116,7 +117,7 @@
 		<div class="mr-5 w-72 border-r-1 pt-10 pr-5">
 			<p class="text-2xl font-semibold uppercase">Filter</p>
 			<div class="pt-4">
-				<p class="font-semibold">Fächer</p>
+				<p class="font-semibold capitalize">{m.filter_subject_text()}</p>
 				<div class="space-y-1">
 					{#if selectedSubjectIds.length != 0}{#each selectedSubjectIds as id}
 							<div class="flex items-center gap-x-2">
@@ -147,14 +148,14 @@
 				</div>
 			</div>
 			<div class="pt-5">
-				<p class="pb-2 font-semibold">Jahre</p>
+				<p class="pb-2 font-semibold">{m.years_text()}</p>
 				<p>{selectedYears[0]}--{selectedYears[1]}</p>
 				<Slider type="multiple" bind:value={selectedYears} min={2016} max={2024} step={1} />
 			</div>
 		</div>
 
 		<div class="pt-10 min-sm:pl-7">
-			<h4 class="pb-5 text-2xl font-semibold">Ergebnisse</h4>
+			<h4 class="pb-5 text-2xl font-semibold">{m.results_text()}</h4>
 			{#if $fileQuery.isSuccess}
 				<div class="flex flex-col gap-y-5">
 					{#each $fileQuery.data as file}

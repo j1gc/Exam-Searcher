@@ -1,5 +1,6 @@
 <script lang="ts">
 	import * as Select from '$lib/components/ui/select/index.js';
+	import { m } from '$lib/paraglide/messages';
 	import { subjectMapping } from '$lib/subject_mapping.svelte';
 
 	let { value = $bindable() }: { value: number[] } = $props();
@@ -24,9 +25,9 @@
 <Select.Root type="multiple" name="fächer" bind:value={subjectIdStrings}>
 	<Select.Trigger class="w-[100%] bg-white">
 		{#if (subjectIdStrings[0] === '-1' && subjectIdStrings.length === 1) || subjectIdStrings.length === subjectMapping.size}
-			Alle Fächer
+			{m.filter_all()} {m.filter_subject_text()}
 		{:else if subjectIdStrings.length > 1}
-			Mehere Fächer
+			{m.filter_multiple()} {m.filter_subject_text()}
 		{:else}
 			{subjectMapping.get(parseInt(subjectIdStrings[0]))}
 		{/if}

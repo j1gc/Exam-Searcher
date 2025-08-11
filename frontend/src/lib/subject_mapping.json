@@ -1,118 +1,147 @@
 [
-  {
-    "id": 1,
-    "name": "Deutsch"
-  },
-  {
-    "id": 2,
-    "name": "Englisch"
-  },
-  {
-    "id": 3,
-    "name": "Französisch"
-  },
-  {
-    "id": 4,
-    "name": "Spanisch"
-  },
-  {
-    "id": 5,
-    "name": "Latein"
-  },
-  {
-    "id": 6,
-    "name": "Griechisch"
-  },
-  {
-    "id": 7,
-    "name": "Kunst"
-  },
-  {
-    "id": 8,
-    "name": "Musik"
-  },
-  {
-    "id": 9,
-    "name": "Erdkunde"
-  },
-  {
-    "id": 10,
-    "name": "Geschichte"
-  },
-  {
-    "id": 11,
-    "name": "Politik-Wirtschaft"
-  },
-  {
-    "id": 12,
-    "name": "Evangelische Religion"
-  },
-  {
-    "id": 13,
-    "name": "Katholische Religion"
-  },
-  {
-    "id": 14,
-    "name": "Werte und Normen"
-  },
-  {
-    "id": 15,
-    "name": "Mathematik"
-  },
-  {
-    "id": 16,
-    "name": "Mathematik (berufliches Gymnasium)"
-  },
-  {
-    "id": 17,
-    "name": "Mathematik (zweiter Bildungsweg)"
-  },
-  {
-    "id": 18,
-    "name": "Mechatronik"
-  },
-  {
-    "id": 19,
-    "name": "Biologie"
-  },
-  {
-    "id": 20,
-    "name": "Chemie"
-  },
-  {
-    "id": 21,
-    "name": "Physik"
-  },
-  {
-    "id": 22,
-    "name": "Informatik"
-  },
-  {
-    "id": 23,
-    "name": "Sport"
-  },
-  {
-    "id": 24,
-    "name": "Ernährung"
-  },
-  {
-    "id": 25,
-    "name": "Betriebswirtschaft mit Rechnungswesen-Controlling"
-  },
-  {
-    "id": 26,
-    "name": "Pädagogik-Psychologie"
-  },
-  {
-    "id": 27,
-    "name": "Betriebs- und Volkswirtschaft"
-  },
-  {
-    "id": 28,
-    "name": "Volkswirtschaft"
-  },
-  {
-    "id": 29,
-    "name": "Gesundheit-Pflege"
-  }
+	{
+		"id": 1,
+		"de": "Deutsch",
+		"en": "German"
+	},
+	{
+		"id": 2,
+		"de": "Englisch",
+		"en": "English"
+	},
+	{
+		"id": 3,
+		"de": "Französisch",
+		"en": "French"
+	},
+	{
+		"id": 4,
+		"de": "Spanisch",
+		"en": "Spanish"
+	},
+	{
+		"id": 5,
+		"de": "Latein",
+		"en": "Latin"
+	},
+	{
+		"id": 6,
+		"de": "Griechisch",
+		"en": "Greek"
+	},
+	{
+		"id": 7,
+		"de": "Kunst",
+		"en": "Art"
+	},
+	{
+		"id": 8,
+		"de": "Musik",
+		"en": "Music"
+	},
+	{
+		"id": 9,
+		"de": "Erdkunde",
+		"en": "Geography"
+	},
+	{
+		"id": 10,
+		"de": "Geschichte",
+		"en": "History"
+	},
+	{
+		"id": 11,
+		"de": "Politik-Wirtschaft",
+		"en": "Politics-Economics"
+	},
+	{
+		"id": 12,
+		"de": "Evangelische Religion",
+		"en": "Protestant Religion"
+	},
+	{
+		"id": 13,
+		"de": "Katholische Religion",
+		"en": "Catholic Religion"
+	},
+	{
+		"id": 14,
+		"de": "Werte und Normen",
+		"en": "Ethics"
+	},
+	{
+		"id": 15,
+		"de": "Mathematik",
+		"en": "Mathematics"
+	},
+	{
+		"id": 16,
+		"de": "Mathematik (berufliches Gymnasium)",
+		"en": "Mathematics (vocational high school)"
+	},
+	{
+		"id": 17,
+		"de": "Mathematik (zweiter Bildungsweg)",
+		"en": "Mathematics (second-chance education)"
+	},
+	{
+		"id": 18,
+		"de": "Mechatronik",
+		"en": "Mechatronics"
+	},
+	{
+		"id": 19,
+		"de": "Biologie",
+		"en": "Biology"
+	},
+	{
+		"id": 20,
+		"de": "Chemie",
+		"en": "Chemistry"
+	},
+	{
+		"id": 21,
+		"de": "Physik",
+		"en": "Physics"
+	},
+	{
+		"id": 22,
+		"de": "Informatik",
+		"en": "Computer Science"
+	},
+	{
+		"id": 23,
+		"de": "Sport",
+		"en": "Physical Education"
+	},
+	{
+		"id": 24,
+		"de": "Ernährung",
+		"en": "Nutrition"
+	},
+	{
+		"id": 25,
+		"de": "Betriebswirtschaft mit Rechnungswesen-Controlling",
+		"en": "Business Administration with Accounting-Controlling"
+	},
+	{
+		"id": 26,
+		"de": "Pädagogik-Psychologie",
+		"en": "Pedagogy-Psychology"
+	},
+	{
+		"id": 27,
+		"de": "Betriebs- und Volkswirtschaft",
+		"en": "Business and Economics"
+	},
+	{
+		"id": 28,
+		"de": "Volkswirtschaft",
+		"en": "Economics"
+	},
+	{
+		"id": 29,
+		"de": "Gesundheit-Pflege",
+		"en": "Health-Care"
+	}
 ]
