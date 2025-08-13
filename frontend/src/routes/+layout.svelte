@@ -27,6 +27,7 @@
 			<Button href="/" variant="link" class="p-0 text-2xl font-semibold text-black"
 				>{m.website_title()}</Button
 			>
+
 			<nav class="flex gap-10">
 				<!--<Button href="/" variant="link" class="p-0  text-black">Startseite</Button>
 				<Button href="/" variant="link" class="p-0 text-black">Fächer</Button>

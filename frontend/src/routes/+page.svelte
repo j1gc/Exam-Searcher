@@ -15,6 +15,8 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { onMount } from 'svelte';
 	import { m } from '$lib/paraglide/messages';
+	import { PUBLIC_BACKEND_URL } from '$env/static/public';
+	import { getLocale } from '$lib/paraglide/runtime';
 
 	async function runQuery(page: number, pageSize: number): Promise<FilesResponseSchema> {
 		let years: number[] = [];
@@ -32,7 +34,7 @@
 		};
 
 		let searchResp = await fetch(
-			`https://exambackend.jonas-floerke.de/search?index=${page}&page_size=${pageSize}`,
+			PUBLIC_BACKEND_URL + `/search?index=${page}&page_size=${pageSize}`,
 			{
 				method: 'POST',
 				headers: {
@@ -151,8 +153,27 @@
 			</div>
 		</div>
 
-		<div class="pt-10 min-sm:pl-7">
+		<div class="h-[100%] pt-10 min-sm:pl-7">
 			<h4 class="pb-5 text-2xl font-semibold">{m.results_text()}</h4>
+			<div class=" mb-3 rounded-md bg-red-200 p-1">
+				<p class="max-w-[100ch] text-sm">
+					{#if getLocale() === 'de'}
+						Alle Prüfungen und Lösungen stammen von der Website des
+					{:else}
+						All exams and answers are comming from the website of the
+					{/if}
+
+					<a
+						class="font-medium text-foreground underline underline-offset-4"
+						href="https://za-aufgaben.nibis.de/">Niedersächsischen Kultusministerium</a
+					>
+					{#if getLocale() === 'de'}
+						und wurden nicht verändert.
+					{:else}
+						and werent changed.
+					{/if}
+				</p>
+			</div>
 			{#if $fileQuery.isSuccess}
 				<div class="flex flex-col gap-y-5">
 					{#each $fileQuery.data as file}

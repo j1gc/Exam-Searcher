@@ -579,7 +579,7 @@ async fn main() {
 
     let mut app = Router::new().route("/search", post(search)).with_state(app_state);
 
-    if (std::env::var("DEBUG").unwrap_or("".to_string()) == "true") {
+    if (std::env::var("DEBUG").unwrap_or("".to_string()).to_lowercase() == "true") {
         app = app.layer(CorsLayer::permissive());
         println!("Running in debug mode");
     } else {
